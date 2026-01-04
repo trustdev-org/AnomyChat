@@ -2,6 +2,8 @@
 
 一个极简、现代、纯前端的匿名聊天室应用，支持多平台静态部署，无需后端、无需 API 密钥。
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/trustdev-org/AnomyChat)
+
 ---
 
 ## ✨ 特性
@@ -12,7 +14,22 @@
 
 ---
 
-## 🚀 本地运行
+## 🚀 快速部署
+
+### 一键部署到 Vercel（推荐）
+
+点击下方按钮即可一键部署：
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/trustdev-org/AnomyChat)
+
+### 其他平台
+- **Netlify**：连接 GitHub 自动部署
+- **Cloudflare Pages**：连接 GitHub 自动部署  
+- **GitHub Pages**：启用 Actions 自动部署
+
+---
+
+## 💻 本地运行
 
 **环境要求：** Node.js 16+
 
@@ -22,22 +39,6 @@ npm run dev
 ```
 
 访问：http://localhost:3000
-
----
-
-## 🛠️ 构建与部署
-
-```bash
-npm run build
-```
-
-构建后会生成 `dist` 文件夹，上传到任意静态服务器即可。
-
-推荐平台：
-- [Vercel](https://vercel.com)
-- [Netlify](https://netlify.com)
-- [Cloudflare Pages](https://pages.cloudflare.com)
-- [GitHub Pages](https://pages.github.com)
 
 ---
 

@@ -2,21 +2,45 @@
 
 > 一个匿名聊天室应用，支持多平台部署的静态网站
 
-## 🚀 快速部署（推荐平台）
+## 🚀 最快部署方式：Vercel（推荐）
 
-### 1. Vercel（最简单）
+### 一键部署
+1. 点击部署按钮：
+
+   [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/trustdev-org/AnomyChat)
+
+2. 登录 Vercel（可用 GitHub 账号）
+3. 点击 "Deploy" 按钮
+4. 等待部署完成（约 1 分钟）
+5. 完成！访问你的专属域名
+
+### 手动部署到 Vercel
 1. 前往 [Vercel](https://vercel.com)
-2. 连接 GitHub 仓库
-3. 自动检测为 React 项目并部署
-4. 完成！访问提供的域名
+2. 点击 "New Project"
+3. 导入你的 GitHub 仓库
+4. Vercel 自动检测配置（Vite 项目）
+5. 点击 "Deploy"
+6. 完成！
 
-### 2. Netlify（拖拽部署）
+**优势：**
+- ✅ 全球 CDN 加速
+- ✅ 自动 HTTPS
+- ✅ 推送代码自动重新部署
+- ✅ 免费自定义域名
+- ✅ 实时预览分支
+
+---
+
+## 🌐 其他部署平台
+## 🌐 其他部署平台
+
+### Netlify（拖拽部署）
 1. 构建项目：`npm run build`
 2. 前往 [Netlify](https://netlify.com)
 3. 拖拽 `dist` 文件夹到部署区域
 4. 完成！
 
-### 3. Cloudflare Pages（全球CDN）
+### Cloudflare Pages（全球CDN）
 1. 前往 [Cloudflare Pages](https://pages.cloudflare.com)
 2. 连接 GitHub 仓库
 3. 构建设置：

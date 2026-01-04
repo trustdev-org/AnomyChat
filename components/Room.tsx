@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Room as RoomType, User, Message, MessageType, MediaState } from '../types';
-import { getMessages, addMessage, clearRoomHistory } from '../services/mockServer';
+import { getMessages, addMessage, clearRoomHistory } from '../services/apiServer';
 import { 
   Mic, MicOff, Video, PhoneOff, 
   Users, Hash, Menu, X, Send, Trash2, Shield, Signal, MonitorUp,
@@ -59,12 +59,16 @@ const Room: React.FC<RoomProps> = ({ user, room, onLeave }) => {
   
   // Load messages & setup polling
   useEffect(() => {
-    const fetch = () => {
-        const msgs = getMessages(room.id);
-        setMessages(msgs);
+    const fetchMessages = async () => {
+        try {
+          const msgs = await getMessages(room.id);
+          setMessages(msgs);
+        } catch (error) {
+          console.error('加载消息失败:', error);
+        }
     };
-    fetch();
-    const interval = setInterval(fetch, 1000); 
+    fetchMessages();
+    const interval = setInterval(fetchMessages, 3000); // 每3秒刷新一次
     return () => clearInterval(interval);
   }, [room.id]);
 
@@ -87,8 +91,12 @@ const Room: React.FC<RoomProps> = ({ user, room, onLeave }) => {
       timestamp: Date.now()
     };
 
-    addMessage(room.id, newMessage);
     setInputText('');
+    await addMessage(room.id, newMessage);
+    
+    // 立即刷新消息列表
+    const msgs = await getMessages(room.id, true);
+    setMessages(msgs);
   };
 
   const handleClear = () => {

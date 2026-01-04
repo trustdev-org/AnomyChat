@@ -1,8 +1,11 @@
 import { Room, Message, MessageType, User } from '../types';
 
+// API 基础路径
+const API_BASE = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+  ? 'http://localhost:3000/api'
+  : '/api';
+
 // Storage Keys
-const ROOMS_KEY = 'wl_rooms';
-const MESSAGES_KEY = 'wl_messages';
 const USERS_KEY = 'wl_users';
 
 // Helpers

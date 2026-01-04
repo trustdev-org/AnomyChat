@@ -1,0 +1,8 @@
+{
+  "name": "WhisperLink (隐秘连接)",
+  "description": "安全、低延迟的匿名聊天应用。支持文字、语音、视频，无需登录，端到端加密设计。",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

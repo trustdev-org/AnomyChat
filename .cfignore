@@ -1,0 +1,6 @@
+# Cloudflare Pages 部署
+# 这个目录包含静态资源，会被自动部署
+dist/
+
+# Worker API 文件
+workers/

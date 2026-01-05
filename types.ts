@@ -28,9 +28,11 @@ export interface Message {
 export interface Room {
   id: string;
   name: string; // The display name (can be same as ID)
-  isPrivate: boolean;
+  isPrivate?: boolean;
   password?: string; // Stored in mock server, not sent to client usually, but here for simulation
   createdAt: number;
+  updatedAt?: number;
+  users?: User[]; // 在线用户列表
 }
 
 export enum ConnectionStatus {

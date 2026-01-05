@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Room as RoomType, User, Message, MessageType, MediaState } from '../types';
-import { getMessages, addMessage, clearRoomHistory } from '../services/apiServer';
+import { getMessages, addMessage, clearRoomHistory, getRoom } from '../services/apiServer';
 import { 
   Mic, MicOff, Video, PhoneOff, 
   Users, Hash, Menu, X, Send, Trash2, Shield, Signal, MonitorUp,
@@ -54,21 +54,28 @@ const Room: React.FC<RoomProps> = ({ user, room, onLeave }) => {
   const [mediaState, setMediaState] = useState<MediaState>(MediaState.IDLE);
   const [micOn, setMicOn] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [onlineUsers, setOnlineUsers] = useState<User[]>([]);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  // Load messages & setup polling
+  // Load messages & room info & setup polling
   useEffect(() => {
-    const fetchMessages = async () => {
+    const fetchData = async () => {
         try {
           const msgs = await getMessages(room.id);
           setMessages(msgs);
+          
+          // 获取房间信息（包括在线用户）
+          const roomData = await getRoom(room.id);
+          if (roomData && roomData.users) {
+            setOnlineUsers(roomData.users);
+          }
         } catch (error) {
-          console.error('加载消息失败:', error);
+          console.error('加载数据失败:', error);
         }
     };
-    fetchMessages();
-    const interval = setInterval(fetchMessages, 3000); // 每3秒刷新一次
+    fetchData();
+    const interval = setInterval(fetchData, 3000); // 每3秒刷新一次
     return () => clearInterval(interval);
   }, [room.id]);
 
@@ -182,34 +189,34 @@ const Room: React.FC<RoomProps> = ({ user, room, onLeave }) => {
                 </button>
             </div>
 
-            {/* Section 2: Members (Visual filler for desktop) */}
+            {/* Section 2: Members */}
             <div>
                  <h3 className="text-xs font-bold text-discord-muted uppercase mb-2 px-2 flex items-center justify-between">
                     <span>在线成员</span>
-                    <span className="text-[10px] bg-discord-dark px-1.5 rounded-full">2</span>
+                    <span className="text-[10px] bg-discord-dark px-1.5 rounded-full">{onlineUsers.length}</span>
                  </h3>
                  <div className="space-y-1">
-                    {/* Self */}
-                    <div className="flex items-center px-2 py-1.5 hover:bg-discord-light/40 rounded cursor-pointer group">
-                        <div className="relative">
-                            <Avatar char={user.avatar} size="sm" />
-                            <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-discord-darker"></div>
-                        </div>
-                        <div className="ml-2 flex flex-col">
-                            <span className="text-sm text-discord-text group-hover:text-white font-medium">{user.username} <span className="text-[10px] text-discord-muted">(我)</span></span>
-                            {mediaState !== MediaState.IDLE && <span className="text-[10px] text-green-400">正在通话中</span>}
-                        </div>
-                    </div>
-                    {/* Dummy Other User */}
-                    <div className="flex items-center px-2 py-1.5 hover:bg-discord-light/40 rounded cursor-pointer group opacity-60">
-                        <div className="relative">
-                            <Avatar char="🐰" size="sm" />
-                            <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-gray-500 rounded-full border-2 border-discord-darker"></div>
-                        </div>
-                        <div className="ml-2">
-                            <span className="text-sm text-discord-text group-hover:text-white font-medium">神秘访客</span>
-                        </div>
-                    </div>
+                    {onlineUsers.length > 0 ? (
+                      onlineUsers.map((member) => {
+                        const isSelf = member.id === user.id;
+                        return (
+                          <div key={member.id} className="flex items-center px-2 py-1.5 hover:bg-discord-light/40 rounded cursor-pointer group">
+                            <div className="relative">
+                                <Avatar char={member.avatar} size="sm" />
+                                <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 ${member.isOnline ? 'bg-green-500' : 'bg-gray-500'} rounded-full border-2 border-discord-darker`}></div>
+                            </div>
+                            <div className="ml-2 flex flex-col">
+                                <span className="text-sm text-discord-text group-hover:text-white font-medium">
+                                  {member.username} {isSelf && <span className="text-[10px] text-discord-muted">(我)</span>}
+                                </span>
+                                {member.isInVoice && <span className="text-[10px] text-green-400">正在通话中</span>}
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="text-xs text-discord-muted text-center py-4">暂无在线成员</div>
+                    )}
                  </div>
             </div>
 

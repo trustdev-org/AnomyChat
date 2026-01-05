@@ -47,8 +47,22 @@ export default function handler(req, res) {
       messages.set(roomId, []);
     }
     
+    // 转换用户数据为完整的 User 对象
+    const formattedUsers = room.users.map(u => ({
+      id: u.id,
+      username: u.name,
+      avatar: u.avatar,
+      isOnline: true,
+      isInVoice: false,
+      isVideoOn: false,
+      isMuted: false
+    }));
+    
     return res.status(200).json({
-      room,
+      room: {
+        ...room,
+        users: formattedUsers
+      },
       messages: messages.get(roomId) || []
     });
   }

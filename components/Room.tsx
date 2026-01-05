@@ -57,6 +57,7 @@ const Room: React.FC<RoomProps> = ({ user, room, onLeave }) => {
   const [onlineUsers, setOnlineUsers] = useState<User[]>([]);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
   
   // Load messages & room info & setup polling
   useEffect(() => {
@@ -117,19 +118,51 @@ const Room: React.FC<RoomProps> = ({ user, room, onLeave }) => {
   };
 
   const toggleMedia = async (type: 'voice' | 'video') => {
-      // 计算新的媒体状态
-      const newMediaState = mediaState === MediaState.IDLE 
-        ? (type === 'voice' ? MediaState.VOICE : MediaState.VIDEO)
-        : MediaState.IDLE;
+      // 如果正在通话，则挂断
+      if (mediaState !== MediaState.IDLE) {
+        // 停止媒体流
+        if (mediaStreamRef.current) {
+          mediaStreamRef.current.getTracks().forEach(track => track.stop());
+          mediaStreamRef.current = null;
+        }
+        
+        setMediaState(MediaState.IDLE);
+        setMicOn(false);
+        
+        // 同步到服务器
+        try {
+          await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/api/rooms`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'updateMedia',
+              roomId: room.id,
+              userId: user.id,
+              mediaState: MediaState.IDLE,
+              isMuted: true
+            })
+          });
+        } catch (error) {
+          console.error('更新媒体状态失败:', error);
+        }
+        return;
+      }
       
-      const newMicOn = newMediaState !== MediaState.IDLE;
-      
-      // 先更新本地状态
-      setMediaState(newMediaState);
-      setMicOn(newMicOn);
-      
-      // 同步到服务器
+      // 开始通话 - 申请权限
       try {
+        const constraints = {
+          audio: true,
+          video: type === 'video'
+        };
+        
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        mediaStreamRef.current = stream;
+        
+        const newMediaState = type === 'voice' ? MediaState.VOICE : MediaState.VIDEO;
+        setMediaState(newMediaState);
+        setMicOn(true);
+        
+        // 同步到服务器
         await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/api/rooms`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -138,11 +171,12 @@ const Room: React.FC<RoomProps> = ({ user, room, onLeave }) => {
             roomId: room.id,
             userId: user.id,
             mediaState: newMediaState,
-            isMuted: !newMicOn
+            isMuted: false
           })
         });
       } catch (error) {
-        console.error('更新媒体状态失败:', error);
+        console.error('无法访问麦克风/摄像头:', error);
+        alert('无法访问麦克风/摄像头，请检查浏览器权限设置');
       }
   };
 
@@ -277,7 +311,7 @@ const Room: React.FC<RoomProps> = ({ user, room, onLeave }) => {
         </div>
 
         {/* User Footer */}
-        <div className="bg-discord-darker p-2 flex items-center justify-between border-t border-discord-dark shrink-0 pb-safe">
+        <div className="bg-discord-darker p-2 flex items-center justify-between border-t border-discord-dark shrink-0" style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
             <div className="flex items-center gap-2 overflow-hidden">
                 <Avatar char={user.avatar} />
                 <div className="flex flex-col min-w-0">
@@ -419,7 +453,7 @@ const Room: React.FC<RoomProps> = ({ user, room, onLeave }) => {
         </div>
 
         {/* Input Area */}
-        <div className="p-4 bg-discord-light border-t border-discord-darker pb-safe">
+        <div className="p-4 bg-discord-light border-t border-discord-darker" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
             <form onSubmit={handleSendMessage} className="relative">
                 <div className="absolute left-3 top-3 text-discord-muted hover:text-white transition-colors cursor-pointer">
                     <MonitorUp size={24} />

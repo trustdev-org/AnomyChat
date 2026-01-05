@@ -399,6 +399,11 @@ const Room: React.FC<RoomProps> = ({ user, room, onLeave }) => {
             </div>
         </div>
       </div>
+      
+      {/* Version Number */}
+      <div className="fixed bottom-4 right-4 text-xs text-discord-muted/50 pointer-events-none">
+        v1.0.0
+      </div>
     </div>
   );
 };

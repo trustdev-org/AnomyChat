@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Room as RoomType, User } from './types';
-import { getOrCreateCurrentUser, createNewRoom, joinExistingRoom } from './services/mockServer';
+import { getOrCreateCurrentUser, createNewRoom, joinExistingRoom } from './services/apiServer';
 import Landing from './components/Landing';
 import Room from './components/Room';
 
@@ -22,27 +22,32 @@ const App: React.FC = () => {
     }
   }, []);
 
-  const handleAction = (mode: 'create' | 'join', roomId: string, password?: string) => {
+  const handleAction = async (mode: 'create' | 'join', roomId: string, password?: string) => {
     setErrorMsg(null);
     
-    if (mode === 'create') {
-        const result = createNewRoom(roomId, !!password, password);
-        if (result.success && result.room) {
-            setCurrentRoom(result.room);
-            setIsJoined(true);
-            window.location.hash = roomId;
-        } else {
-            setErrorMsg(result.error || '创建失败');
-        }
-    } else {
-        const result = joinExistingRoom(roomId, password);
-        if (result.success && result.room) {
-            setCurrentRoom(result.room);
-            setIsJoined(true);
-            window.location.hash = roomId;
-        } else {
-            setErrorMsg(result.error || '加入失败');
-        }
+    try {
+      if (mode === 'create') {
+          const result = await createNewRoom(roomId, !!password, password);
+          if (result.success && result.room) {
+              setCurrentRoom(result.room);
+              setIsJoined(true);
+              window.location.hash = roomId;
+          } else {
+              setErrorMsg(result.error || '创建失败');
+          }
+      } else {
+          const result = await joinExistingRoom(roomId, password);
+          if (result.success && result.room) {
+              setCurrentRoom(result.room);
+              setIsJoined(true);
+              window.location.hash = roomId;
+          } else {
+              setErrorMsg(result.error || '加入失败');
+          }
+      }
+    } catch (error) {
+      console.error('操作失败:', error);
+      setErrorMsg('连接服务器失败，请检查网络');
     }
   };
 

@@ -156,6 +156,10 @@ const Landing: React.FC<LandingProps> = ({ user, onAction, error }) => {
       <div className="mt-4 text-xs text-discord-muted">
          用户 ID: {user.username} {user.avatar} (本地存储)
       </div>
+      
+      <div className="fixed bottom-4 right-4 text-xs text-discord-muted/50">
+        v1.0.0
+      </div>
     </div>
   );
 };

@@ -33,18 +33,13 @@ export default function handler(req, res) {
 
   // GET /api/rooms?roomId=xxx - 获取房间信息
   if (method === 'GET' && roomId) {
-    let room = rooms.get(roomId);
+    const room = rooms.get(roomId);
     if (!room) {
-      // 自动创建房间
-      room = {
-        id: roomId,
-        name: roomId,
-        users: [],
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-      };
-      rooms.set(roomId, room);
-      messages.set(roomId, []);
+      // 房间不存在，不自动创建
+      return res.status(404).json({
+        error: 'Room not found',
+        message: '房间不存在'
+      });
     }
     
     // 转换用户数据为完整的 User 对象
@@ -53,9 +48,9 @@ export default function handler(req, res) {
       username: u.name,
       avatar: u.avatar,
       isOnline: true,
-      isInVoice: false,
-      isVideoOn: false,
-      isMuted: false
+      isInVoice: u.isInVoice || false,
+      isVideoOn: u.isVideoOn || false,
+      isMuted: u.isMuted || false
     }));
     
     return res.status(200).json({
@@ -67,19 +62,50 @@ export default function handler(req, res) {
     });
   }
 
-  // POST /api/rooms?roomId=xxx - 加入房间
+  // POST /api/rooms?roomId=xxx&action=create - 创建房间
+  if (method === 'POST' && roomId && body.action === 'create') {
+    // 检查房间是否已存在
+    if (rooms.has(roomId)) {
+      return res.status(409).json({
+        error: 'Room already exists',
+        message: '房间已存在，请直接加入或更换房间ID'
+      });
+    }
+
+    const room = {
+      id: roomId,
+      name: roomId,
+      users: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+    rooms.set(roomId, room);
+    messages.set(roomId, []);
+
+    const { userId, userName, userAvatar } = body;
+    
+    room.users.push({
+      id: userId,
+      name: userName,
+      avatar: userAvatar,
+      joinedAt: Date.now(),
+      isInVoice: false,
+      isVideoOn: false,
+      isMuted: false
+    });
+    room.updatedAt = Date.now();
+
+    return res.status(200).json({ room });
+  }
+
+  // POST /api/rooms?roomId=xxx&action=join - 加入房间
   if (method === 'POST' && roomId && body.action === 'join') {
-    let room = rooms.get(roomId);
+    const room = rooms.get(roomId);
     if (!room) {
-      room = {
-        id: roomId,
-        name: roomId,
-        users: [],
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-      };
-      rooms.set(roomId, room);
-      messages.set(roomId, []);
+      return res.status(404).json({
+        error: 'Room not found',
+        message: '房间不存在，请先创建房间'
+      });
     }
 
     const { userId, userName, userAvatar } = body;
@@ -91,12 +117,33 @@ export default function handler(req, res) {
         id: userId,
         name: userName,
         avatar: userAvatar,
-        joinedAt: Date.now()
+        joinedAt: Date.now(),
+        isInVoice: false,
+        isVideoOn: false,
+        isMuted: false
       });
       room.updatedAt = Date.now();
     }
 
     return res.status(200).json({ room });
+  }
+  
+  // POST /api/rooms - 更新媒体状态
+  if (method === 'POST' && body.action === 'updateMedia') {
+    const room = rooms.get(body.roomId);
+    if (!room) {
+      return res.status(404).json({ error: 'Room not found' });
+    }
+    
+    const user = room.users.find(u => u.id === body.userId);
+    if (user) {
+      user.isInVoice = body.mediaState === 'VOICE' || body.mediaState === 'VIDEO';
+      user.isVideoOn = body.mediaState === 'VIDEO';
+      user.isMuted = body.isMuted;
+      room.updatedAt = Date.now();
+    }
+    
+    return res.status(200).json({ success: true });
   }
 
   // POST /api/rooms?roomId=xxx - 发送消息

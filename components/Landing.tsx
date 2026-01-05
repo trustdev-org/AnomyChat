@@ -107,6 +107,7 @@ const Landing: React.FC<LandingProps> = ({ user, onAction, error }) => {
               value={roomId}
               onChange={(e) => setRoomId(e.target.value)}
               autoFocus
+              autoComplete="off"
             />
             {mode === 'create' && (
                 <button 
@@ -127,6 +128,7 @@ const Landing: React.FC<LandingProps> = ({ user, onAction, error }) => {
               placeholder={mode === 'create' ? "设置密码 (可选)" : "如已加密，请输入密码"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete="off"
             />
           </div>
 

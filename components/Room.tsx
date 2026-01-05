@@ -106,20 +106,43 @@ const Room: React.FC<RoomProps> = ({ user, room, onLeave }) => {
     setMessages(msgs);
   };
 
-  const handleClear = () => {
+  const handleClear = async () => {
       if(confirm('确定要清除本房间的所有历史记录吗？这对所有人不可逆。')) {
-          clearRoomHistory(room.id);
+          await clearRoomHistory(room.id);
+          // 刷新消息列表
+          const msgs = await getMessages(room.id, true);
+          setMessages(msgs);
           setSidebarOpen(false);
       }
   };
 
-  const toggleMedia = (type: 'voice' | 'video') => {
-      if (mediaState === MediaState.IDLE) {
-          setMediaState(type === 'voice' ? MediaState.VOICE : MediaState.VIDEO);
-          setMicOn(true);
-      } else {
-          setMediaState(MediaState.IDLE);
-          setMicOn(false);
+  const toggleMedia = async (type: 'voice' | 'video') => {
+      // 计算新的媒体状态
+      const newMediaState = mediaState === MediaState.IDLE 
+        ? (type === 'voice' ? MediaState.VOICE : MediaState.VIDEO)
+        : MediaState.IDLE;
+      
+      const newMicOn = newMediaState !== MediaState.IDLE;
+      
+      // 先更新本地状态
+      setMediaState(newMediaState);
+      setMicOn(newMicOn);
+      
+      // 同步到服务器
+      try {
+        await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/api/rooms`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'updateMedia',
+            roomId: room.id,
+            userId: user.id,
+            mediaState: newMediaState,
+            isMuted: !newMicOn
+          })
+        });
+      } catch (error) {
+        console.error('更新媒体状态失败:', error);
       }
   };
 
@@ -199,17 +222,38 @@ const Room: React.FC<RoomProps> = ({ user, room, onLeave }) => {
                     {onlineUsers.length > 0 ? (
                       onlineUsers.map((member) => {
                         const isSelf = member.id === user.id;
+                        const hasMedia = member.isInVoice || member.isVideoOn;
                         return (
                           <div key={member.id} className="flex items-center px-2 py-1.5 hover:bg-discord-light/40 rounded cursor-pointer group">
                             <div className="relative">
                                 <Avatar char={member.avatar} size="sm" />
                                 <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 ${member.isOnline ? 'bg-green-500' : 'bg-gray-500'} rounded-full border-2 border-discord-darker`}></div>
                             </div>
-                            <div className="ml-2 flex flex-col">
-                                <span className="text-sm text-discord-text group-hover:text-white font-medium">
+                            <div className="ml-2 flex flex-col flex-1 min-w-0">
+                                <span className="text-sm text-discord-text group-hover:text-white font-medium truncate">
                                   {member.username} {isSelf && <span className="text-[10px] text-discord-muted">(我)</span>}
                                 </span>
-                                {member.isInVoice && <span className="text-[10px] text-green-400">正在通话中</span>}
+                                {hasMedia && (
+                                  <div className="flex items-center gap-2 text-[10px]">
+                                    {member.isVideoOn && (
+                                      <span className="text-green-400 flex items-center gap-1">
+                                        <Video size={12} />
+                                        视频中
+                                      </span>
+                                    )}
+                                    {member.isInVoice && !member.isVideoOn && (
+                                      <span className="text-green-400 flex items-center gap-1">
+                                        <Mic size={12} />
+                                        语音中
+                                      </span>
+                                    )}
+                                    {member.isMuted && (
+                                      <span className="text-red-400">
+                                        (静音)
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
                             </div>
                           </div>
                         );

@@ -98,7 +98,7 @@ export const createNewRoom = async (roomId: string, isPrivate: boolean, password
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        action: 'join',
+        action: 'create',
         userId: user.id,
         userName: user.username,
         userAvatar: user.avatar
@@ -106,9 +106,14 @@ export const createNewRoom = async (roomId: string, isPrivate: boolean, password
     });
     
     const data = await response.json();
+    
+    if (!response.ok) {
+      return { success: false, error: data.message || '创建房间失败' };
+    }
+    
     return { success: true, room: data.room };
   } catch (error) {
-    return { success: false, error: '创建房间失败' };
+    return { success: false, error: '网络错误，创建房间失败' };
   }
 };
 
@@ -127,9 +132,14 @@ export const joinExistingRoom = async (roomId: string, inputPass?: string): Prom
     });
     
     const data = await response.json();
+    
+    if (!response.ok) {
+      return { success: false, error: data.message || '加入房间失败' };
+    }
+    
     return { success: true, room: data.room };
   } catch (error) {
-    return { success: false, error: '加入房间失败' };
+    return { success: false, error: '网络错误，加入房间失败' };
   }
 };
 
